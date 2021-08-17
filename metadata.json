@@ -1,0 +1,10 @@
+{
+  "gettext-domain": "rog-manager",
+  "name": "Rog Asus Manager",
+  "description": "Asus ROG manager",
+  "uuid": "rog-manager@rog",
+  "settings-schema": "org.gnome.shell.extensions.rogmanager",
+  "shell-version": [
+    "3.38"
+  ]
+}

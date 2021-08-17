@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+
+  <enum id="org.gnome.shell.extensions.rogmanager.enum-sample">
+    <value value="0" nick="TOP"/>
+    <value value="1" nick="BOTTOM"/>
+    <value value="2" nick="RIGHT"/>
+    <value value="3" nick="LEFT"/>
+  </enum>
+
+  <schema id="org.gnome.shell.extensions.rogmanager"
+    path="/org/gnome/shell/extensions/rogmanager/">
+
+    <key type="i" name="update-time">
+      <default>5</default>
+      <summary>Seconds before next update</summary>
+      <description>This is the seconds after CPU temperature extension updates the data from the syetem</description>
+    </key>
+
+    <key type="s" name="position-in-panel">
+      <default>'right'</default>
+      <summary>Position in Panel</summary>
+      <description>Position in Panel ('left', 'center', 'right')</description>
+    </key>
+
+    <key name="panel-box-index" type="i">
+      <default>0</default>
+      <summary>Index in panel box</summary>
+      <description>Index within the selected panel box (0: first, 1: second, ..., -1: last)</description>
+    </key>
+
+    <key type="b" name="debug">
+      <default>false</default>
+      <summary>Enable debug logging</summary>
+      <description>Enable debug logging from the extension</description>
+    </key>
+
+  </schema>
+
+</schemalist>
