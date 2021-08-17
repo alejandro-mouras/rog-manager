@@ -60,21 +60,11 @@ const RogPrefsWidget = GObject.registerClass(
       );
       let updateTime = Gtk.SpinButton.new_with_range(1, 60, 1);
       this.attach(updateTime, 1, i++, 1, 1);
-      this._settings.bind(
-        "update-time",
-        updateTime,
-        "value",
-        Gio.SettingsBindFlags.DEFAULT
-      );
+      this._settings.bind("update-time", updateTime, "value", Gio.SettingsBindFlags.DEFAULT);
 
       let panelBoxIndex = Gtk.SpinButton.new_with_range(-1, 20, 1);
       this.attach(panelBoxIndex, 2, i, 1, 1);
-      this._settings.bind(
-        "panel-box-index",
-        panelBoxIndex,
-        "value",
-        Gio.SettingsBindFlags.DEFAULT
-      );
+      this._settings.bind("panel-box-index", panelBoxIndex, "value", Gio.SettingsBindFlags.DEFAULT);
 
       this._addComboBox({
         items: { left: _("Left"), center: _("Center"), right: _("Right") },
@@ -98,9 +88,7 @@ const RogPrefsWidget = GObject.registerClass(
         model.set(model.append(), [0, 1], [k, params.items[k]]);
       }
 
-      combobox.set_active(
-        Object.keys(params.items).indexOf(this._settings.get_string(params.key))
-      );
+      combobox.set_active(Object.keys(params.items).indexOf(this._settings.get_string(params.key)));
 
       combobox.connect("changed", (entry) => {
         let [success, iter] = combobox.get_active_iter();
@@ -108,13 +96,7 @@ const RogPrefsWidget = GObject.registerClass(
         this._settings.set_string(params.key, model.get_value(iter, 0));
       });
 
-      this.attach(
-        new Gtk.Label({ label: params.label, halign: Gtk.Align.END }),
-        params.x,
-        params.y,
-        1,
-        1
-      );
+      this.attach(new Gtk.Label({ label: params.label, halign: Gtk.Align.END }), params.x, params.y, 1, 1);
       this.attach(combobox, params.x + 1, params.y, 1, 1);
     }
   }

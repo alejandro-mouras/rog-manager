@@ -4,9 +4,7 @@ const Me = imports.misc.extensionUtils.getCurrentExtension();
 const ByteArray = imports.byteArray;
 function getAsusctlData(argv) {
   const asusctl = GLib.find_program_in_path("asusctl");
-  return JSON.parse(
-    ByteArray.toString(GLib.spawn_command_line_sync(`${asusctl} ${argv} -j`)[1])
-  );
+  return JSON.parse(ByteArray.toString(GLib.spawn_command_line_sync(`${asusctl} ${argv} -j`)[1]));
 }
 
 var asusctlUtl = class {
@@ -37,9 +35,7 @@ var asusctlUtl = class {
     return this._smartDevices.map((device) => {
       return {
         label: getAsusctlData(`--info ${device["name"]}`)["model_name"],
-        temp: parseFloat(
-          getAsusctlData(`--attributes ${device["name"]}`).temperature.current
-        ),
+        temp: parseFloat(getAsusctlData(`--attributes ${device["name"]}`).temperature.current),
       };
     });
   }

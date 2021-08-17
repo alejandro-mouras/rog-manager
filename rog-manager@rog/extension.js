@@ -63,52 +63,45 @@ const RogManagerMenuButton = GObject.registerClass(
       this.debug = this._settings.get_boolean("debug") ? _debugFunc : () => {};
 
       this._settings.connect("changed::debug", () => {
-        this.debug = this._settings.get_boolean("debug")
-          ? _debugFunc
-          : () => {};
+        this.debug = this._settings.get_boolean("debug") ? _debugFunc : () => {};
       });
 
-      let box = new St.BoxLayout({ style_class: "panel-status-menu-box" });
-      box.add_child(
-        new St.Icon({
-          icon_name: "face-smile-symbolic",
-          style_class: "system-status-icon",
-        })
-      );
-      box.add_child(PopupMenu.arrowIcon(St.Side.BOTTOM));
-      this.add_child(box);
+      this._menuLayout = new St.BoxLayout();
+      this._initialIcon = new St.Icon({ style_class: "system-status-icon" });
+      this._initialIcon.gicon = Gio.icon_new_for_string(Me.path + "/icons/rog.svg");
+      // this._initialIcon.gicon = Gio.icon_new_for_string(Me.path + "/icons/material-temperatrure-symbolic.svg");
+      this._menuLayout.add(this._initialIcon);
 
-      let item = new PopupMenu.PopupMenuItem(_("Show Notification"));
-      item.connect("activate", () => {
-        Main.notify(_("Whatʼs up, folks?"));
-      });
+      this.add_actor(this._menuLayout);
+
+      // let box = new St.BoxLayout({ style_class: "panel-status-menu-box" });
+      // box.add_child(
+      //   new St.Icon({
+      //     icon_name: "face-smile-symbolic",
+      //     style_class: "system-status-icon",
+      //   })
+      // );
+      // box.add_child(PopupMenu.arrowIcon(St.Side.BOTTOM));
+      // this.add_child(box);
+
+      // let item = new PopupMenu.PopupMenuItem(_("Show Notification"));
+      // item.connect("activate", () => {
+      //   Main.notify(_("Whatʼs up, folks?"));
+      // });
 
       const GLib = imports.gi.GLib;
-      let stuff = GLib.spawn_command_line_sync(
-        "asusctl graphics -g"
-      )[1].toString();
-      log("asusctl", stuff);
+      let stuff = GLib.spawn_command_line_sync("asusctl graphics -g")[1].toString();
+      global.log("asusctl", stuff);
 
       this._settingChangedSignals = [];
-      this._addSettingChangedSignal(
-        "update-time",
-        this._updateTimeChanged.bind(this)
-      );
-      this._addSettingChangedSignal(
-        "position-in-panel",
-        this._positionInPanelChanged.bind(this)
-      );
-      this._addSettingChangedSignal(
-        "panel-box-index",
-        this._positionInPanelChanged.bind(this)
-      );
-      this.menu.addMenuItem(item);
+      this._addSettingChangedSignal("update-time", this._updateTimeChanged.bind(this));
+      this._addSettingChangedSignal("position-in-panel", this._positionInPanelChanged.bind(this));
+      this._addSettingChangedSignal("panel-box-index", this._positionInPanelChanged.bind(this));
+      // this.menu.addMenuItem(item);
     }
 
     _addSettingChangedSignal(key, callback) {
-      this._settingChangedSignals.push(
-        this._settings.connect("changed::" + key, callback)
-      );
+      this._settingChangedSignals.push(this._settings.connect("changed::" + key, callback));
     }
 
     _positionInPanelChanged() {
@@ -140,14 +133,11 @@ const RogManagerMenuButton = GObject.registerClass(
     }
 
     _addTimer() {
-      this._timeoutId = Mainloop.timeout_add_seconds(
-        this._settings.get_int("update-time"),
-        () => {
-          //   this._querySensors();
-          // readd to update queue
-          return true;
-        }
-      );
+      this._timeoutId = Mainloop.timeout_add_seconds(this._settings.get_int("update-time"), () => {
+        //   this._querySensors();
+        // readd to update queue
+        return true;
+      });
     }
 
     get positionInPanel() {
