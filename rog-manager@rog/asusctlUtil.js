@@ -76,4 +76,11 @@ var AsusctlUtil = class extends CommandLineUtil.CommandLineUtil {
   set newKeyLedMode(mode) {
     GLib.spawn_command_line_sync(this.path + " led-mode " + mode);
   }
+  set newAnimeSwitch(mode) {
+    GLib.spawn_command_line_sync(this.path + " anime -t " + mode);
+    GLib.spawn_command_line_sync(this.path + " anime -b " + mode);
+  }
+  set newAnimeBright(bright) {
+    GLib.spawn_command_line_sync(this.path + " anime leds -b " + bright);
+  }
 };

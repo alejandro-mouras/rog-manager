@@ -144,6 +144,28 @@ const RogManagerMenuButton = GObject.registerClass(
           });
         }
 
+        // Anime
+        let animeSwitch = ["on", "off"];
+        for (let i of animeSwitch) {
+          asus.push({
+            type: "anime-switch",
+            label: _(i),
+            value: i,
+            displayName: this.capitalizeFirstLetter(i),
+          });
+        }
+
+        // Anime Bright
+        let animeBrighttMode = ["0%", "25%", "50%", "100%"];
+        for (let i of animeBrighttMode) {
+          asus.push({
+            type: "anime-bright",
+            label: _(i),
+            value: i,
+            displayName: _(i),
+          });
+        }
+
         this.debug("Render all MenuItems");
         this.menu.removeAll();
         this._appendMenuItems(asus);
@@ -202,14 +224,19 @@ const RogManagerMenuButton = GObject.registerClass(
       // Keyboard Led Mode
       let ledKeyModeGroup = new PopupMenu.PopupSubMenuMenuItem(_("Keyboard Led Mode"), true);
       let ledKeyModeOptions = [];
-      let actLedKeyMode = [];
+      let actLedKeyMode = null;
       this.menu.addMenuItem(ledKeyModeGroup);
 
       // Anime
       this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-      let animeGroup = new PopupMenu.PopupSubMenuMenuItem(_("Anime Matrix"), true);
-      this.menu.addMenuItem(animeGroup);
+      let animeSwitchGroup = new PopupMenu.PopupSubMenuMenuItem(_("Anime Matrix"), true);
+      let animeSwitchOptions = [];
+      let actAnimeSwitch = null;
+      this.menu.addMenuItem(animeSwitchGroup);
+
       let animeBrightGroup = new PopupMenu.PopupSubMenuMenuItem(_("Anime Matrix Bright"), true);
+      let animeBrightOptions = [];
+      let actAnimeBright = null;
       this.menu.addMenuItem(animeBrightGroup);
 
       // Render
@@ -276,7 +303,7 @@ const RogManagerMenuButton = GObject.registerClass(
 
             if (l) {
               self.main = true;
-              this._utils.asus.newChargeLimit = l;
+              this._utils.asus.newChargeLimit = l.slice(0, -1);
 
               Main.notify(_("Charge limit changed to " + l));
             }
@@ -327,6 +354,52 @@ const RogManagerMenuButton = GObject.registerClass(
               Main.notify(_("Keyboard led mode changed to " + l));
             }
             for (let i of ledKeyModeOptions) {
+              if (i.key != self.key) {
+                i.main = false;
+              }
+            }
+          });
+        } else if (s.type == "anime-switch") {
+          animeSwitchGroup.menu.addMenuItem(item);
+
+          animeSwitchOptions.push(item);
+          if (actAnimeSwitch == key) {
+            item.main = true;
+          }
+
+          item.connect("activate", (self) => {
+            let l = self.key;
+
+            if (l) {
+              self.main = true;
+              this._utils.asus.newAnimeSwitch = l;
+
+              Main.notify(_("Anime turned " + l));
+            }
+            for (let i of animeSwitchOptions) {
+              if (i.key != self.key) {
+                i.main = false;
+              }
+            }
+          });
+        } else if (s.type == "anime-bright") {
+          animeBrightGroup.menu.addMenuItem(item);
+
+          animeBrightOptions.push(item);
+          if (actAnimeBright == key) {
+            item.main = true;
+          }
+
+          item.connect("activate", (self) => {
+            let l = self.key;
+
+            if (l) {
+              self.main = true;
+              this._utils.asus.newAnimeBright = l.slice(0, -1);
+
+              Main.notify(_("Anime bright changed to " + l));
+            }
+            for (let i of animeBrightOptions) {
               if (i.key != self.key) {
                 i.main = false;
               }
