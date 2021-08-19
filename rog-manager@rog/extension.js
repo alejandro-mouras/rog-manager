@@ -466,33 +466,3 @@ function disable() {
   rogMenu.destroy();
   rogMenu = null;
 }
-
-// class Extension {
-//     constructor(uuid) {
-//         this._uuid = uuid;
-
-//         ExtensionUtils.initTranslations(GETTEXT_DOMAIN);
-//     }
-
-//     enable() {
-//         this._indicator = new RogManagerMenuButton();
-
-//         // Notification
-//         const Main = imports.ui.main;
-//         Main.notify('Message Title', 'Message Body');
-
-//         Main.panel.addToStatusArea(this._uuid, this._indicator);
-//     }
-
-//     disable() {
-//         this._indicator.destroy();
-//         this._indicator = null;
-//     }
-// }
-
-// function init(meta) {
-
-//     // const Util = imports.misc.util;
-//     // Util.spawn(['/bin/bash', 'asusctl', 'graphics', "-g"])
-//     return new Extension(meta.uuid);
-// }

@@ -1,5 +1,3 @@
-// Example#4
-
 const GObject = imports.gi.GObject;
 const Gio = imports.gi.Gio;
 const Gtk = imports.gi.Gtk;
