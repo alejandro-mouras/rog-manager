@@ -70,7 +70,10 @@ var AsusctlUtil = class extends CommandLineUtil.CommandLineUtil {
   }
 
   set newKeyBright(charge) {
-    global.log(this.path + " -k " + charge);
     GLib.spawn_command_line_sync(this.path + " -k " + charge);
+  }
+
+  set newKeyLedMode(mode) {
+    GLib.spawn_command_line_sync(this.path + " led-mode " + mode);
   }
 };

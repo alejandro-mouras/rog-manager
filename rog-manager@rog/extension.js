@@ -60,53 +60,18 @@ const RogManagerMenuButton = GObject.registerClass(
 
       this.add_actor(this._menuLayout);
 
-      // let box = new St.BoxLayout({ style_class: "panel-status-menu-box" });
-      // box.add_child(
-      //   new St.Icon({
-      //     icon_name: "face-smile-symbolic",
-      //     style_class: "system-status-icon",
-      //   })
-      // );
-      // box.add_child(PopupMenu.arrowIcon(St.Side.BOTTOM));
-      // this.add_child(box);
-
-      // let item = new PopupMenu.PopupMenuItem(_("Show Notification"));
-      // item.connect("activate", () => {
-      //   Main.notify(_("Whatʼs up, folks?"));
-      // });
-
       const GLib = imports.gi.GLib;
       let stuff = GLib.spawn_command_line_sync("asusctl graphics -g")[1].toString();
       global.log("asusctl", stuff);
 
       this._settingChangedSignals = [];
-      // this._addSettingChangedSignal("drive-utility", this._driveUtilityChanged.bind(this));
-      this._addSettingChangedSignal("update-time", this._updateTimeChanged.bind(this));
       this._addSettingChangedSignal("position-in-panel", this._positionInPanelChanged.bind(this));
       this._addSettingChangedSignal("panel-box-index", this._positionInPanelChanged.bind(this));
 
       this.connect("destroy", this._onDestroy.bind(this));
 
-      // TODO:  Query asusctl
-      this._queryAsusCtl();
-
-      this._addTimer();
-
       // Update UI
       this._updateUI(true);
-      // this._updateUITimeoutId = Mainloop.timeout_add(250, () => {
-      //   this._updateUI();
-      //   // readd to update queue
-      //   return true;
-      // });
-    }
-
-    _queryAsusCtl() {
-      for (let asus of Object.values(this._utils)) {
-        asus.execute(() => {
-          // we cannot change actor in background thread #74
-        });
-      }
     }
 
     _updateUI(needUpdate = false) {
@@ -119,7 +84,6 @@ const RogManagerMenuButton = GObject.registerClass(
       let asusctlInfo = this._utils.asus.asusHealth;
 
       let profileInfo = this._utils.asus.availableProfiles;
-      global.log("asusctlInfo: ", asusctlInfo);
 
       if (asusctlInfo) {
         let asus = [];
@@ -166,6 +130,17 @@ const RogManagerMenuButton = GObject.registerClass(
             label: _(i),
             value: i,
             displayName: _(i),
+          });
+        }
+
+        // Keyboard Led Mode
+        let keyboardLedMode = ["static", "breathe", "pulse"];
+        for (let i of keyboardLedMode) {
+          asus.push({
+            type: "keyboard-mode",
+            label: _(i),
+            value: i,
+            displayName: this.capitalizeFirstLetter(i),
           });
         }
 
@@ -217,16 +192,17 @@ const RogManagerMenuButton = GObject.registerClass(
 
       this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
 
-      // Keyboard LED
+      // Keyboard Bright
       let brightKeyGroup = new PopupMenu.PopupSubMenuMenuItem(_("Keyboard Bright"), true);
       let keyDict = { 49: "Low", 50: "Med", 51: "High", 48: "Off" };
       let brightKeyOptions = [];
-      global.log("actual bright: " + this._utils.asus.actualKeyBright);
       let actBrightKey = keyDict[this._utils.asus.actualKeyBright];
-      global.log("actual bright: " + actBrightKey);
       this.menu.addMenuItem(brightKeyGroup);
 
+      // Keyboard Led Mode
       let ledKeyModeGroup = new PopupMenu.PopupSubMenuMenuItem(_("Keyboard Led Mode"), true);
+      let ledKeyModeOptions = [];
+      let actLedKeyMode = [];
       this.menu.addMenuItem(ledKeyModeGroup);
 
       // Anime
@@ -325,9 +301,32 @@ const RogManagerMenuButton = GObject.registerClass(
               self.main = true;
               this._utils.asus.newKeyBright = l.toLowerCase();
 
-              Main.notify(_("Charge limit changed to " + l));
+              Main.notify(_("Keyboard bright changed to " + l));
             }
             for (let i of brightKeyOptions) {
+              if (i.key != self.key) {
+                i.main = false;
+              }
+            }
+          });
+        } else if (s.type == "keyboard-mode") {
+          ledKeyModeGroup.menu.addMenuItem(item);
+
+          ledKeyModeOptions.push(item);
+          if (actLedKeyMode == key) {
+            item.main = true;
+          }
+
+          item.connect("activate", (self) => {
+            let l = self.key;
+
+            if (l) {
+              self.main = true;
+              this._utils.asus.newKeyLedMode = l;
+
+              Main.notify(_("Keyboard led mode changed to " + l));
+            }
+            for (let i of ledKeyModeOptions) {
               if (i.key != self.key) {
                 i.main = false;
               }
@@ -365,25 +364,9 @@ const RogManagerMenuButton = GObject.registerClass(
     }
 
     _onDestroy() {
-      // TODO: Destroy AsusctlUtility
-      Mainloop.source_remove(this._timeoutId);
-      Mainloop.source_remove(this._updateUITimeoutId);
       for (let signal of this._settingChangedSignals) {
         this._settings.disconnect(signal);
       }
-    }
-
-    _updateTimeChanged() {
-      Mainloop.source_remove(this._timeoutId);
-      this._addTimer();
-    }
-
-    _addTimer() {
-      this._timeoutId = Mainloop.timeout_add_seconds(this._settings.get_int("update-time"), () => {
-        this._queryAsusCtl();
-        // readd to update queue
-        return true;
-      });
     }
 
     capitalizeFirstLetter(string) {
