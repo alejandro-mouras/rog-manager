@@ -1,4 +1,4 @@
-# rog-manager
+# Asus Rog Manager
 Asus Rog Manager
 
 Instructions 
