@@ -3,7 +3,7 @@
 const GObject = imports.gi.GObject;
 const Gio = imports.gi.Gio;
 const Gtk = imports.gi.Gtk;
-
+const GLib = imports.gi.GLib;
 const ExtensionUtils = imports.misc.extensionUtils;
 const Me = ExtensionUtils.getCurrentExtension();
 
@@ -16,55 +16,11 @@ const RogPrefsWidget = GObject.registerClass(
   class Rog_RogPrefsWidget extends Gtk.Grid {
     _init() {
       super._init();
-
-      // this.margin = 20;
-      // this.set_spacing(15);
-      // this.set_orientation(Gtk.Orientation.VERTICAL);
-
-      // this.connect("destroy", Gtk.main_quit);
-
-      // let myLabel = new Gtk.Label({
-      //   label: "Translated Text",
-      // });
-
-      // let spinButton = new Gtk.SpinButton();
-      // spinButton.set_sensitive(true);
-      // spinButton.set_range(-60, 60);
-      // spinButton.set_value(0);
-      // spinButton.set_increments(1, 2);
-
-      // spinButton.connect("value-changed", function (w) {
-      //   log(w.get_value_as_int());
-      // });
-
-      // let hBox = new Gtk.Box();
-      // hBox.set_orientation(Gtk.Orientation.HORIZONTAL);
-
-      // hBox.pack_start(myLabel, false, false, 0);
-      // hBox.pack_end(spinButton, false, false, 0);
-
-      // this.add(hBox);
+      this.margin = this.row_spacing = this.column_spacing = 20;
 
       this._settings = ExtensionUtils.getSettings();
 
       let i = 0;
-      this.attach(
-        new Gtk.Label({
-          label: _("Poll Sensors Every (sec)"),
-          halign: Gtk.Align.END,
-        }),
-        0,
-        i,
-        1,
-        1
-      );
-      let updateTime = Gtk.SpinButton.new_with_range(1, 60, 1);
-      this.attach(updateTime, 1, i++, 1, 1);
-      this._settings.bind("update-time", updateTime, "value", Gio.SettingsBindFlags.DEFAULT);
-
-      let panelBoxIndex = Gtk.SpinButton.new_with_range(-1, 20, 1);
-      this.attach(panelBoxIndex, 2, i, 1, 1);
-      this._settings.bind("panel-box-index", panelBoxIndex, "value", Gio.SettingsBindFlags.DEFAULT);
 
       this._addComboBox({
         items: { left: _("Left"), center: _("Center"), right: _("Right") },
@@ -72,6 +28,18 @@ const RogPrefsWidget = GObject.registerClass(
         y: i,
         x: 0,
         label: _("Position in Panel"),
+      });
+
+      let panelBoxIndex = Gtk.SpinButton.new_with_range(-1, 20, 1);
+      this.attach(panelBoxIndex, 2, i, 1, 1);
+      this._settings.bind("panel-box-index", panelBoxIndex, "value", Gio.SettingsBindFlags.DEFAULT);
+
+      this._addLineEdit({
+        text: { left: _("Left"), center: _("Center"), right: _("Right") },
+        key: "upported-features",
+        y: i + 1,
+        x: 0,
+        label: _("Supported features"),
       });
     }
 
@@ -98,6 +66,16 @@ const RogPrefsWidget = GObject.registerClass(
 
       this.attach(new Gtk.Label({ label: params.label, halign: Gtk.Align.END }), params.x, params.y, 1, 1);
       this.attach(combobox, params.x + 1, params.y, 1, 1);
+    }
+
+    _addLineEdit(params) {
+      let lbl = new Gtk.Label({ label: params.label, halign: Gtk.Align.END });
+      this.attach(lbl, params.x, params.y, 1, 1);
+      let text = new Gtk.Label({
+        label: GLib.spawn_command_line_sync("asusctl -s")[1].toString(),
+        halign: Gtk.Align.END,
+      });
+      this.attach(text, params.x, params.y, 1, 1);
     }
   }
 );
