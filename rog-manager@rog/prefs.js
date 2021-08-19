@@ -69,8 +69,6 @@ const RogPrefsWidget = GObject.registerClass(
     }
 
     _addLineEdit(params) {
-      let lbl = new Gtk.Label({ label: params.label, halign: Gtk.Align.END });
-      this.attach(lbl, params.x, params.y, 1, 1);
       let text = new Gtk.Label({
         label: GLib.spawn_command_line_sync("asusctl -s")[1].toString(),
         halign: Gtk.Align.END,
