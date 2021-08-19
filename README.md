@@ -1,6 +1,6 @@
 # Asus Rog Manager
 Asus Rog Manager
 
-Instructions 
-1. ./deploy.sh
-2. Alt*F2 -> r
+## Installing
+Download asusctl repository and install it [here](https://gitlab.com/asus-linux/asusctl). 
+
