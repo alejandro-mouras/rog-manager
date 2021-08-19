@@ -1,37 +1,20 @@
-/* extension.js
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 2 of the License, or
- * (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <http://www.gnu.org/licenses/>.
- *
- * SPDX-License-Identifier: GPL-2.0-or-later
- */
-
-/* exported init */
-
-const GETTEXT_DOMAIN = "my-indicator-extension";
-
 const { GObject, St } = imports.gi;
-
-const Gettext = imports.gettext.domain(GETTEXT_DOMAIN);
-const _ = Gettext.gettext;
-
-const ExtensionUtils = imports.misc.extensionUtils;
 const Main = imports.ui.main;
+const Util = imports.misc.util;
+const Mainloop = imports.mainloop;
+const Clutter = imports.gi.Clutter;
 const PanelMenu = imports.ui.panelMenu;
 const PopupMenu = imports.ui.popupMenu;
-
 const Gio = imports.gi.Gio;
+const GLib = imports.gi.GLib;
+
+const ExtensionUtils = imports.misc.extensionUtils;
 const Me = imports.misc.extensionUtils.getCurrentExtension();
+const AsusctlUtil = Me.imports.asusctlUtil;
+const AsusItem = Me.imports.asusItem;
+
+const Gettext = imports.gettext.domain(Me.metadata["gettext-domain"]);
+const _ = Gettext.gettext;
 
 function _makeLogFunction(prefix) {
   return (msg) => {
@@ -66,11 +49,14 @@ const RogManagerMenuButton = GObject.registerClass(
         this.debug = this._settings.get_boolean("debug") ? _debugFunc : () => {};
       });
 
+      this._utils = {
+        asus: new AsusctlUtil.AsusctlUtil(),
+      };
+
       this._menuLayout = new St.BoxLayout();
-      this._initialIcon = new St.Icon({ style_class: "system-status-icon" });
-      this._initialIcon.gicon = Gio.icon_new_for_string(Me.path + "/icons/rog.svg");
-      // this._initialIcon.gicon = Gio.icon_new_for_string(Me.path + "/icons/material-temperatrure-symbolic.svg");
-      this._menuLayout.add(this._initialIcon);
+      this._hotLabels = {};
+
+      this._createInitialIcon();
 
       this.add_actor(this._menuLayout);
 
@@ -94,10 +80,152 @@ const RogManagerMenuButton = GObject.registerClass(
       global.log("asusctl", stuff);
 
       this._settingChangedSignals = [];
+      // this._addSettingChangedSignal("drive-utility", this._driveUtilityChanged.bind(this));
       this._addSettingChangedSignal("update-time", this._updateTimeChanged.bind(this));
       this._addSettingChangedSignal("position-in-panel", this._positionInPanelChanged.bind(this));
       this._addSettingChangedSignal("panel-box-index", this._positionInPanelChanged.bind(this));
-      // this.menu.addMenuItem(item);
+
+      this.connect("destroy", this._onDestroy.bind(this));
+
+      // TODO:  Query asusctl
+      this._queryAsusCtl();
+
+      this._addTimer();
+
+      // Update UI
+      this._updateUI(true);
+      // this._updateUITimeoutId = Mainloop.timeout_add(250, () => {
+      //   this._updateUI();
+      //   // readd to update queue
+      //   return true;
+      // });
+    }
+
+    _queryAsusCtl() {
+      for (let asus of Object.values(this._utils)) {
+        asus.execute(() => {
+          // we cannot change actor in background thread #74
+        });
+      }
+    }
+
+    _updateUI(needUpdate = false) {
+      // CHEQUEAR SI CAMBIA ALGO PARA ACTUALIZAR
+      this._updateDisplay(); // #74
+      this.debug("update display");
+    }
+
+    _updateDisplay() {
+      let asusctlInfo = this._utils.asus.asusHealth;
+
+      let profileInfo = this._utils.asus.availableProfiles;
+      global.log("asusctlInfo: ", asusctlInfo);
+
+      if (asusctlInfo) {
+        let asus = [];
+
+        // Profiles
+        if (profileInfo.length > 0) {
+          for (let i of profileInfo) {
+            asus.push({
+              type: "profile",
+              label: _(i),
+              value: i,
+              displayName: this.capitalizeFirstLetter(i),
+            });
+          }
+        }
+
+        this.debug("Render all MenuItems");
+        this.menu.removeAll();
+        this._appendMenuItems(asus);
+      } else {
+        this._sensorMenuItems = {};
+        this.menu.removeAll();
+
+        let item = new PopupMenu.PopupMenuItem(_("Please install asusctl.\n"));
+        this.menu.addMenuItem(item);
+        this._appendStaticMenuItems();
+      }
+    }
+
+    _appendStaticMenuItems() {
+      // separator
+      this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+
+      let settings = new PopupMenu.PopupBaseMenuItem();
+      settings.actor.add_child(
+        new St.Label({ text: _("Rog Manager Settings"), x_align: Clutter.ActorAlign.CENTER, x_expand: true })
+      );
+      settings.connect("activate", function () {
+        Util.spawn(["gnome-extensions", "prefs", Me.metadata.uuid]);
+      });
+      this.menu.addMenuItem(settings);
+    }
+
+    _appendMenuItems(asus) {
+      // Profile
+      let profileGroup = new PopupMenu.PopupSubMenuMenuItem(_("Profiles"), true);
+      let profileOptions = [];
+      let actProf = this._utils.asus.actualProfile;
+      this.menu.addMenuItem(profileGroup);
+      for (let s of asus) {
+        let key = s.key || s.label;
+        let item = new AsusItem.AsusItem(key, s.label, s.value, s.displayName || undefined);
+        profileGroup.menu.addMenuItem(item);
+
+        profileOptions.push(item);
+        if (actProf == key) {
+          item.main = true;
+        }
+
+        item.connect("activate", (self) => {
+          let l = self.key;
+
+          if (l) {
+            self.main = true;
+            this._utils.asus.newProfile = l;
+
+            Main.notify(_("Profile change to " + l));
+          }
+          for (let i of profileOptions) {
+            if (i.key != self.key) {
+              i.main = false;
+            }
+          }
+        });
+      }
+
+      // Graphics
+      let graphicsGroup = new PopupMenu.PopupSubMenuMenuItem(_("Graphics"), true);
+      this.menu.addMenuItem(graphicsGroup);
+      // Charge Limit
+      let chargeLimitGroup = new PopupMenu.PopupSubMenuMenuItem(_("Charge Limit"), true);
+      this.menu.addMenuItem(chargeLimitGroup);
+
+      // Keyboard LED
+      this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+      let ledKeyGroup = new PopupMenu.PopupSubMenuMenuItem(_("Keyboard Led"), true);
+      this.menu.addMenuItem(ledKeyGroup);
+      let brightKeyGroup = new PopupMenu.PopupSubMenuMenuItem(_("Keyboard Bright"), true);
+      this.menu.addMenuItem(brightKeyGroup);
+      let ledKeyModeGroup = new PopupMenu.PopupSubMenuMenuItem(_("Keyboard Led Mode"), true);
+      this.menu.addMenuItem(ledKeyModeGroup);
+
+      // Anime
+      this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
+      let animeGroup = new PopupMenu.PopupSubMenuMenuItem(_("Anime Matrix"), true);
+      this.menu.addMenuItem(animeGroup);
+      let animeBrightGroup = new PopupMenu.PopupSubMenuMenuItem(_("Anime Matrix Bright"), true);
+      this.menu.addMenuItem(animeBrightGroup);
+
+      this._appendStaticMenuItems();
+    }
+
+    _createInitialIcon() {
+      this._initialIcon = new St.Icon(); //{ style_class: "system-status-icon" }
+      this._initialIcon.gicon = Gio.icon_new_for_string(Me.path + "/icons/rog-icon-white.svg");
+      this._menuLayout.add(this._initialIcon);
     }
 
     _addSettingChangedSignal(key, callback) {
@@ -120,8 +248,9 @@ const RogManagerMenuButton = GObject.registerClass(
     }
 
     _onDestroy() {
-      // Destroy AsusctlUtility
-
+      // TODO: Destroy AsusctlUtility
+      Mainloop.source_remove(this._timeoutId);
+      Mainloop.source_remove(this._updateUITimeoutId);
       for (let signal of this._settingChangedSignals) {
         this._settings.disconnect(signal);
       }
@@ -134,10 +263,14 @@ const RogManagerMenuButton = GObject.registerClass(
 
     _addTimer() {
       this._timeoutId = Mainloop.timeout_add_seconds(this._settings.get_int("update-time"), () => {
-        //   this._querySensors();
+        this._queryAsusCtl();
         // readd to update queue
         return true;
       });
+    }
+
+    capitalizeFirstLetter(string) {
+      return string.charAt(0).toUpperCase() + string.slice(1);
     }
 
     get positionInPanel() {
