@@ -147,6 +147,28 @@ const RogManagerMenuButton = GObject.registerClass(
           });
         }
 
+        // Charge Limit
+        let chargeLimitMode = ["30%", "60%", "100%"];
+        for (let i of chargeLimitMode) {
+          asus.push({
+            type: "charge",
+            label: _(i),
+            value: i,
+            displayName: _(i),
+          });
+        }
+
+        // Keyboard Bright
+        let keyboardBrightMode = ["Low", "Med", "High", "Off"];
+        for (let i of keyboardBrightMode) {
+          asus.push({
+            type: "keyboard-bright",
+            label: _(i),
+            value: i,
+            displayName: _(i),
+          });
+        }
+
         this.debug("Render all MenuItems");
         this.menu.removeAll();
         this._appendMenuItems(asus);
@@ -189,14 +211,21 @@ const RogManagerMenuButton = GObject.registerClass(
 
       // Charge Limit
       let chargeLimitGroup = new PopupMenu.PopupSubMenuMenuItem(_("Charge Limit"), true);
+      let chargeOptions = [];
+      let actCharge = null;
       this.menu.addMenuItem(chargeLimitGroup);
 
-      // Keyboard LED
       this.menu.addMenuItem(new PopupMenu.PopupSeparatorMenuItem());
-      let ledKeyGroup = new PopupMenu.PopupSubMenuMenuItem(_("Keyboard Led"), true);
-      this.menu.addMenuItem(ledKeyGroup);
+
+      // Keyboard LED
       let brightKeyGroup = new PopupMenu.PopupSubMenuMenuItem(_("Keyboard Bright"), true);
+      let keyDict = { 49: "Low", 50: "Med", 51: "High", 48: "Off" };
+      let brightKeyOptions = [];
+      global.log("actual bright: " + this._utils.asus.actualKeyBright);
+      let actBrightKey = keyDict[this._utils.asus.actualKeyBright];
+      global.log("actual bright: " + actBrightKey);
       this.menu.addMenuItem(brightKeyGroup);
+
       let ledKeyModeGroup = new PopupMenu.PopupSubMenuMenuItem(_("Keyboard Led Mode"), true);
       this.menu.addMenuItem(ledKeyModeGroup);
 
@@ -253,6 +282,52 @@ const RogManagerMenuButton = GObject.registerClass(
               Main.notify(_("Graphics mode changed to " + l), _("User action required is: logout"));
             }
             for (let i of graphicsOptions) {
+              if (i.key != self.key) {
+                i.main = false;
+              }
+            }
+          });
+        } else if (s.type == "charge") {
+          chargeLimitGroup.menu.addMenuItem(item);
+
+          chargeOptions.push(item);
+          if (actCharge == key) {
+            item.main = true;
+          }
+
+          item.connect("activate", (self) => {
+            let l = self.key;
+
+            if (l) {
+              self.main = true;
+              this._utils.asus.newChargeLimit = l;
+
+              Main.notify(_("Charge limit changed to " + l));
+            }
+            for (let i of chargeOptions) {
+              if (i.key != self.key) {
+                i.main = false;
+              }
+            }
+          });
+        } else if (s.type == "keyboard-bright") {
+          brightKeyGroup.menu.addMenuItem(item);
+
+          brightKeyOptions.push(item);
+          if (actBrightKey == key) {
+            item.main = true;
+          }
+
+          item.connect("activate", (self) => {
+            let l = self.key;
+
+            if (l) {
+              self.main = true;
+              this._utils.asus.newKeyBright = l.toLowerCase();
+
+              Main.notify(_("Charge limit changed to " + l));
+            }
+            for (let i of brightKeyOptions) {
               if (i.key != self.key) {
                 i.main = false;
               }

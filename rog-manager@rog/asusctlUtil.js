@@ -54,7 +54,23 @@ var AsusctlUtil = class extends CommandLineUtil.CommandLineUtil {
   }
 
   set newGraphics(graph) {
-    global.log("set " + this.path + " graphics -m " + graph);
     GLib.spawn_command_line_sync(this.path + " graphics -m " + graph);
+  }
+  set newChargeLimit(charge) {
+    GLib.spawn_command_line_sync(this.path + " -c " + charge);
+  }
+
+  get actualKeyBright() {
+    let bright = GLib.spawn_command_line_sync(this.path + " -k")[1]
+      .toString()
+      .trim()
+      .slice(33);
+
+    return bright;
+  }
+
+  set newKeyBright(charge) {
+    global.log(this.path + " -k " + charge);
+    GLib.spawn_command_line_sync(this.path + " -k " + charge);
   }
 };
