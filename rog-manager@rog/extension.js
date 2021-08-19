@@ -136,6 +136,17 @@ const RogManagerMenuButton = GObject.registerClass(
           }
         }
 
+        // Graphics
+        let graphicsMode = ["nvidia", "hybrid", "compute", "integrated"];
+        for (let i of graphicsMode) {
+          asus.push({
+            type: "graphics",
+            label: _(i),
+            value: i,
+            displayName: this.capitalizeFirstLetter(i),
+          });
+        }
+
         this.debug("Render all MenuItems");
         this.menu.removeAll();
         this._appendMenuItems(asus);
@@ -169,36 +180,13 @@ const RogManagerMenuButton = GObject.registerClass(
       let profileOptions = [];
       let actProf = this._utils.asus.actualProfile;
       this.menu.addMenuItem(profileGroup);
-      for (let s of asus) {
-        let key = s.key || s.label;
-        let item = new AsusItem.AsusItem(key, s.label, s.value, s.displayName || undefined);
-        profileGroup.menu.addMenuItem(item);
-
-        profileOptions.push(item);
-        if (actProf == key) {
-          item.main = true;
-        }
-
-        item.connect("activate", (self) => {
-          let l = self.key;
-
-          if (l) {
-            self.main = true;
-            this._utils.asus.newProfile = l;
-
-            Main.notify(_("Profile change to " + l));
-          }
-          for (let i of profileOptions) {
-            if (i.key != self.key) {
-              i.main = false;
-            }
-          }
-        });
-      }
 
       // Graphics
       let graphicsGroup = new PopupMenu.PopupSubMenuMenuItem(_("Graphics"), true);
+      let graphicsOptions = [];
+      let actGraph = this._utils.asus.actualGraphics;
       this.menu.addMenuItem(graphicsGroup);
+
       // Charge Limit
       let chargeLimitGroup = new PopupMenu.PopupSubMenuMenuItem(_("Charge Limit"), true);
       this.menu.addMenuItem(chargeLimitGroup);
@@ -218,6 +206,60 @@ const RogManagerMenuButton = GObject.registerClass(
       this.menu.addMenuItem(animeGroup);
       let animeBrightGroup = new PopupMenu.PopupSubMenuMenuItem(_("Anime Matrix Bright"), true);
       this.menu.addMenuItem(animeBrightGroup);
+
+      // Render
+      for (let s of asus) {
+        let key = s.key || s.label;
+        let item = new AsusItem.AsusItem(key, s.label, s.value, s.displayName || undefined);
+
+        if (s.type == "profile") {
+          profileGroup.menu.addMenuItem(item);
+
+          profileOptions.push(item);
+          if (actProf == key) {
+            item.main = true;
+          }
+
+          item.connect("activate", (self) => {
+            let l = self.key;
+
+            if (l) {
+              self.main = true;
+              this._utils.asus.newProfile = l;
+
+              Main.notify(_("Profile change to " + l));
+            }
+            for (let i of profileOptions) {
+              if (i.key != self.key) {
+                i.main = false;
+              }
+            }
+          });
+        } else if (s.type == "graphics") {
+          graphicsGroup.menu.addMenuItem(item);
+
+          graphicsOptions.push(item);
+          if (actGraph == key) {
+            item.main = true;
+          }
+
+          item.connect("activate", (self) => {
+            let l = self.key;
+
+            if (l) {
+              self.main = true;
+              this._utils.asus.newGraphics = l;
+
+              Main.notify(_("Graphics mode changed to " + l), _("User action required is: logout"));
+            }
+            for (let i of graphicsOptions) {
+              if (i.key != self.key) {
+                i.main = false;
+              }
+            }
+          });
+        }
+      }
 
       this._appendStaticMenuItems();
     }
