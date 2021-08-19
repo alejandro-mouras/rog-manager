@@ -2,4 +2,5 @@
 Asus Rog Manager
 
 Instructions 
-1. In ~/.local/share/gnome-shell/extensions/ 
+1. ./build.sh
+2. Alt*F2 -> r
