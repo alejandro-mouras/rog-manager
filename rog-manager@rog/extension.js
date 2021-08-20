@@ -412,7 +412,7 @@ const RogManagerMenuButton = GObject.registerClass(
     }
 
     _createInitialIcon() {
-      this._initialIcon = new St.Icon(); //{ style_class: "system-status-icon" }
+      this._initialIcon = new St.Icon({ style_class: "system-rog-icon" });
       this._initialIcon.gicon = Gio.icon_new_for_string(Me.path + "/icons/rog-icon-white.svg");
       this._menuLayout.add(this._initialIcon);
     }
