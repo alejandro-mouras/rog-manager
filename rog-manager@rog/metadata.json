@@ -4,6 +4,7 @@
   "description": "Asus ROG manager",
   "uuid": "rog-manager@rog",
   "settings-schema": "org.gnome.shell.extensions.rogmanager",
+  "version": 3,
   "shell-version": [
     "3.38"
   ],
