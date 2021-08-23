@@ -112,7 +112,7 @@ const RogManagerMenuButton = GObject.registerClass(
         }
 
         // Charge Limit
-        let chargeLimitMode = ["30%", "60%", "100%"];
+        let chargeLimitMode = ["60%", "80%", "100%"];
         for (let i of chargeLimitMode) {
           asus.push({
             type: "charge",
